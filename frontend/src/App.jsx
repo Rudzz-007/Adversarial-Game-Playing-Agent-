@@ -1,122 +1,164 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState, useEffect } from "react";
+import { fetchAIMove } from "./services/api";
+import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0)
+const ROWS = 6;
+const COLS = 7;
+const EMPTY = 0;
+const PLAYER = 1;
+const AI = 2;
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+function createEmptyBoard() {
+  return Array(ROWS)
+    .fill(null)
+    .map(() => Array(COLS).fill(EMPTY));
 }
 
-export default App
+export default function App() {
+  const [board, setBoard] = useState(createEmptyBoard());
+  const [turn, setTurn] = useState(PLAYER); // PLAYER (1) goes first, AI (2) second
+  const [winner, setWinner] = useState(null);
+  const [depth, setDepth] = useState(4); // 2: Easy, 4: Medium, 6: Hard
+  const [isThinking, setIsThinking] = useState(false);
+  const [winningCells, setWinningCells] = useState([]);
+
+  // Check win condition locally on frontend for instant UI feedback
+  const checkWin = (currentBoard, piece) => {
+    // Horizontal
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS - 3; c++) {
+        if (currentBoard[r][c] === piece && currentBoard[r][c+1] === piece && currentBoard[r][c+2] === piece && currentBoard[r][c+3] === piece) {
+          return [[r,c], [r,c+1], [r,c+2], [r,c+3]];
+        }
+      }
+    }
+    // Vertical
+    for (let r = 0; r < ROWS - 3; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (currentBoard[r][c] === piece && currentBoard[r+1][c] === piece && currentBoard[r+2][c] === piece && currentBoard[r+3][c] === piece) {
+          return [[r,c], [r+1,c], [r+2,c], [r+3,c]];
+        }
+      }
+    }
+    // Positive Diagonal
+    for (let r = 0; r < ROWS - 3; r++) {
+      for (let c = 0; c < COLS - 3; c++) {
+        if (currentBoard[r][c] === piece && currentBoard[r+1][c+1] === piece && currentBoard[r+2][c+2] === piece && currentBoard[r+3][c+3] === piece) {
+          return [[r,c], [r+1,c+1], [r+2,c+2], [r+3,c+3]];
+        }
+      }
+    }
+    // Negative Diagonal
+    for (let r = 3; r < ROWS; r++) {
+      for (let c = 0; c < COLS - 3; c++) {
+        if (currentBoard[r][c] === piece && currentBoard[r-1][c+1] === piece && currentBoard[r-2][c+2] === piece && currentBoard[r-3][c+3] === piece) {
+          return [[r,c], [r-1,c+1], [r-2,c+2], [r-3,c+3]];
+        }
+      }
+    }
+    return null;
+  };
+
+  // Handle player column click
+  const handleColumnClick = async (colIndex) => {
+    if (winner || turn !== PLAYER || isThinking) return;
+
+    // Find bottom-most open row in this column
+    let targetRow = -1;
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (board[r][colIndex] === EMPTY) {
+        targetRow = r;
+        break;
+      }
+    }
+
+    if (targetRow === -1) return; // Column is full
+
+    // Make player move
+    const newBoard = board.map(row => [...row]);
+    newBoard[targetRow][colIndex] = PLAYER;
+    setBoard(newBoard);
+
+    const winCoords = checkWin(newBoard, PLAYER);
+    if (winCoords) {
+      setWinner("Player");
+      setWinningCells(winCoords);
+      return;
+    }
+
+    // Switch turn to AI
+    setTurn(AI);
+    setIsThinking(true);
+
+    // Call Backend for AI Move
+    const aiResponse = await fetchAIMove(newBoard, depth);
+    setIsThinking(false);
+
+    if (aiResponse && aiResponse.column !== null && aiResponse.row !== -1) {
+      const aiBoard = newBoard.map(row => [...row]);
+      aiBoard[aiResponse.row][aiResponse.column] = AI;
+      setBoard(aiBoard);
+
+      const aiWinCoords = checkWin(aiBoard, AI);
+      if (aiWinCoords) {
+        setWinner("AI Agent");
+        setWinningCells(aiWinCoords);
+      } else {
+        setTurn(PLAYER);
+      }
+    } else {
+      setTurn(PLAYER); // Fallback if full/error
+    }
+  };
+
+  const resetGame = () => {
+    setBoard(createEmptyBoard());
+    setTurn(PLAYER);
+    setWinner(null);
+    setWinningCells([]);
+    setIsThinking(false);
+  };
+
+  return (
+    <div className="game-container">
+      <h1>Connect Four: Adversarial AI Agent</h1>
+      
+      <div className="controls-panel">
+        <div className="status-indicator">
+          {winner ? (
+            <span className="winner-text">🎉 Winner: {winner}!</span>
+          ) : isThinking ? (
+            <span className="thinking-text">🤖 AI is thinking...</span>
+          ) : (
+            <span>Current Turn: {turn === PLAYER ? "👤 Player (Red)" : "🤖 AI (Yellow)"}</span>
+          )}
+        </div>
+
+        <div className="settings">
+          <label>Difficulty: </label>
+          <select value={depth} onChange={(e) => setDepth(Number(e.target.value))} disabled={isThinking || turn === AI}>
+            <option value={2}>Easy (Depth 2)</option>
+            <option value={4}>Medium (Depth 4)</option>
+            <option value={6}>Hard (Depth 6)</option>
+          </select>
+          <button className="reset-btn" onClick={resetGame}>Reset Game</button>
+        </div>
+      </div>
+
+      <div className="board">
+        {board.map((row, rIdx) =>
+          row.map((cell, cIdx) => {
+            const isWinningCell = winningCells.some(([r, c]) => r === rIdx && c === cIdx);
+            return (
+              <div
+                key={`${rIdx}-${cIdx}`}
+                className={`cell ${cell === PLAYER ? "player" : cell === AI ? "ai" : ""} ${isWinningCell ? "winning" : ""}`}
+                onClick={() => handleColumnClick(cIdx)}
+              />
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
