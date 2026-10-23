@@ -6,8 +6,8 @@ updated: 2026-10-23
 
 # Roadmap — Adversarial Game-Playing Agent (Connect Four AI)
 
-> **Current Phase**: Phase 3 — Interactive Frontend Interface  
-> **Status**: Ready for Phase 3 Planning  
+> **Current Phase**: Phase 4 — Baseline AI Agents (Random & Greedy)  
+> **Status**: Ready for Phase 4 Planning  
 > **Reference**: PRD Section 18 (Development Roadmap)
 
 ---
@@ -16,7 +16,7 @@ updated: 2026-10-23
 - [x] Reliable 6×7 Connect Four Game Engine with 100% win/draw detection and unit tests.
 - [ ] Shared modular `BaseAgent` interface and all 6 AI agent implementations (Random, Greedy, Minimax, Alpha-Beta, Optimized Alpha-Beta, MCTS/UCT).
 - [ ] FastAPI REST API with game management, move submission, AI calculation, and benchmarking endpoints.
-- [ ] Polished React (Vite) interface with interactive board, animations, telemetry panels, and game controls.
+- [x] Polished React (Vite) interface with interactive board, animations, telemetry panels, and game controls.
 - [ ] Automated Head-to-Head Benchmarking with telemetry aggregation and CSV/JSON export.
 - [ ] Comprehensive test suite and documentation.
 
@@ -42,7 +42,7 @@ updated: 2026-10-23
 ---
 
 ### Phase 3: Interactive Frontend Interface
-**Status**: ⬜ Not Started  
+**Status**: ✅ Complete  
 **Objective**: Build modern component architecture (`GameBoard`, `GameCell`, `GameControls`, `GameStatus`, `useGame` hook) featuring drop animations, hover columns, win highlight, turn indicators, New Game/Restart, and responsive dark design system.  
 **Requirements**: REQ-FR-01, REQ-FR-03, REQ-FR-08, REQ-NFR-04  
 **Depends on**: Phase 2  

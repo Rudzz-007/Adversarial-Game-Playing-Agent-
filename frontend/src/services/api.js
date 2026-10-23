@@ -1,23 +1,119 @@
-// frontend/src/services/api.js
-const API_URL = "http://localhost:8000";
+/**
+ * API Service layer for backend communication.
+ * Communicates with FastAPI backend conforming to PRD §12 contracts and error schemas.
+ */
 
-export async function fetchAIMove(board, depth = 4) {
+const API_BASE = 'http://localhost:8000';
+
+/**
+ * Check backend health status.
+ * Tries canonical /api/health with fallback to /health.
+ */
+export async function checkHealth() {
   try {
-    const response = await fetch(`${API_URL}/api/ai-move`, {
-      method: "POST",
+    const res = await fetch(`${API_BASE}/api/health`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.status === 'ok';
+    }
+  } catch {
+    // Try fallback
+  }
+
+  try {
+    const fallback = await fetch(`${API_BASE}/health`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    if (fallback.ok) {
+      const data = await fallback.json();
+      return data.status === 'ok';
+    }
+  } catch {
+    // Both endpoints unreachable
+  }
+
+  return false;
+}
+
+/**
+ * Fetch catalog of available AI agents and metadata from GET /api/agents.
+ */
+export async function fetchAgents() {
+  try {
+    const res = await fetch(`${API_BASE}/api/agents`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch agents: HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    return data.agents || [];
+  } catch (error) {
+    console.warn('Failed to load agent catalog:', error.message);
+    return [];
+  }
+}
+
+/**
+ * Request an AI move from POST /api/ai-move.
+ * Preserves exact existing success contract: returns { column, row }.
+ * Measures real round-trip latency in milliseconds.
+ *
+ * @param {number[][]} board - Current 6x7 board grid.
+ * @param {number} depth - Search depth (2, 4, 6).
+ * @returns {Promise<{ column: number, row: number, latencyMs: number }>}
+ */
+export async function fetchAIMove(board, depth = 4) {
+  const startTime = performance.now();
+
+  try {
+    const response = await fetch(`${API_BASE}/api/ai-move`, {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
       },
       body: JSON.stringify({ board, depth }),
     });
 
+    const latencyMs = Math.round(performance.now() - startTime);
+
     if (!response.ok) {
-      throw new Error("Failed to fetch AI move from backend");
+      let errorCode = 'API_ERROR';
+      let errorMessage = `Server returned status ${response.status}`;
+
+      try {
+        const errorJson = await response.json();
+        if (errorJson && errorJson.error) {
+          errorCode = errorJson.error.code || errorCode;
+          errorMessage = errorJson.error.message || errorMessage;
+        }
+      } catch {
+        // Response was not JSON
+      }
+
+      const err = new Error(errorMessage);
+      err.code = errorCode;
+      err.status = response.status;
+      throw err;
     }
 
-    return await response.json();
+    const data = await response.json();
+    return {
+      column: data.column,
+      row: data.row,
+      latencyMs,
+    };
   } catch (error) {
-    console.error("API Error:", error);
-    return null;
+    if (!error.code) {
+      error.code = 'NETWORK_ERROR';
+      error.message = error.message || 'Network error: could not connect to backend server.';
+    }
+    throw error;
   }
 }
