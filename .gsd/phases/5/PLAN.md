@@ -154,38 +154,53 @@ When probing the transposition table at state $(B, \text{turn})$ with remaining 
 
 ## 5. MCTS Reward Perspective & Algorithmic Cycle (`MCTSAgent`)
 
-### A. Node-to-Move Reward Perspective
+### A. Node-to-Move Reward Perspective & Alternating Selection Invariant
 In 2-player zero-sum games, storing rewards from the perspective of the player who made the move to reach the node is mathematically standard, symmetric, and robust:
 - **`node.player_just_moved`**: Player ID (1 or 2) who executed the move that created `node`.
 - **`node.visits`**: Total visit count ($n$).
 - **`node.wins`**: Accumulated reward ($w$) evaluated strictly from `node.player_just_moved`'s perspective.
-- **Rollout Outcome Evaluation**:
-  - At the terminal state of a rollout simulation with result `winner`:
-    - If `winner == node.player_just_moved`: reward is $+1.0$ (win).
-    - If `winner is None` (draw): reward is $+0.5$ (draw).
-    - If `winner != node.player_just_moved`: reward is $0.0$ (loss).
-- **Backpropagation**:
-  - Traverse up the tree from the newly expanded node to the root.
-  - At each node:
-    - `node.visits += 1`
-    - `node.wins += reward` (evaluated with respect to that node's `player_just_moved`).
-- **UCT Selection**:
-  - When parent node $u$ (turn is $P_{\text{turn}}$) selects among its children:
-    - Each child $c$ represents a move made by $P_{\text{turn}}$.
-    - Therefore, `c.player_just_moved == P_turn`.
-    - Hence, $c$'s win rate $c.wins / c.visits$ is **directly** the win rate for $P_{\text{turn}}$!
-    - The UCT formula applies uniformly across all tree nodes:
-      $$\text{UCT}(c) = \frac{c.wins}{c.visits} + C \sqrt{\frac{\ln(u.visits)}{c.visits}} \quad (C = \sqrt{2} \approx 1.414)$$
+
+#### The Selection & Backpropagation Invariant:
+1. **Alternating Parent Selection**:
+   - At any parent node $u$, the player whose turn it is to move is $P_{\text{turn}}$.
+   - Every parent $u$ selects among its own move children: each child $c$ represents a move chosen and executed by $P_{\text{turn}}$ (`c.player_just_moved == P_turn`).
+   - Consequently, child $c$'s win rate $c.wins / c.visits$ is **directly from $P_{\text{turn}}$'s perspective**!
+   - **Root Level**: Root turn is the agent (`self.player_id`). Root selects among children representing agent moves, maximizing agent win rate.
+   - **Depth 1 Level**: Depth-1 turn is the opponent (`self.opp_id`). Depth-1 parent selects among children representing opponent moves, maximizing opponent win rate.
+   - **Alternating Depth**: This invariant alternates at every ply. Thus, UCT selection applies uniformly across all nodes without sign flipping:
+     $$\text{UCT}(c) = \frac{c.wins}{c.visits} + C \sqrt{\frac{\ln(u.visits)}{c.visits}} \quad (C = \sqrt{2} \approx 1.414)$$
+
+2. **Backpropagation**:
+   - When a simulation terminates with outcome `winner` (`1`, `2`, or `None` for draw), the outcome propagates up the path from the selected leaf node to the root.
+   - At each node $v$ along the backpropagation path:
+     - `v.visits += 1`
+     - Reward is computed with respect to that node's `player_just_moved`:
+       - If `winner == v.player_just_moved`: reward is $+1.0$ (win for the player who made this move).
+       - If `winner is None` (draw): reward is $+0.5$ (draw).
+       - If `winner != v.player_just_moved`: reward is $0.0$ (loss for the player who made this move).
+     - `v.wins += reward`.
+   - Every node $v$ accurately reflects the quality of that specific move for the player who chose it.
 
 ### B. Move Selection Policy at Root
 - Once the iteration budget is exhausted, select the root child with the **highest visit count** ($\max_c c.visits$).
 - Visit count is mathematically proven to be significantly more stable and resilient to rollout noise than raw win rate.
 
-### C. MCTS Corner Cases & Test Fixtures
+### C. MCTS Iteration & Simulation Semantics (PRD §13.3)
+- **`mcts_iterations`**: Counts the number of complete MCTS tree search cycles (Selection $\to$ Expansion $\to$ Simulation $\to$ Backpropagation) executed by the search loop.
+- **`mcts_simulations`**: Counts the number of completed rollout playouts executed to a terminal evaluation.
+- **One Rollout per Iteration**: In the standard UCT implementation where exactly one rollout simulation is performed per iteration, both metrics equal the completed iteration count (`mcts_simulations == mcts_iterations`).
+- **Terminal and Early-Stop Behavior**:
+  1. **Terminal Root**: If `select_move()` is called on an already full or terminal board, zero iterations and zero simulations are executed: `mcts_iterations = 0`, `mcts_simulations = 0`, returning `(None, telemetry)`.
+  2. **Immediate Terminal Expansion**: If an expanded node is already a terminal state (e.g. piece drop immediately forms 4-in-a-row), no moves need to be simulated during rollout. Because the terminal state is evaluated directly as the outcome of that iteration, 1 simulation outcome is recorded: `mcts_simulations` and `mcts_iterations` both increment by 1.
+  3. **Early-Stop / Time Cap**: If search is capped early after $K$ cycles, both report exactly $K$ completed cycles, preserving empirical accuracy without claiming uncompleted iterations.
+- **Metric Isolation**: Both metrics are strictly `null` for all tree-search agents and baseline agents (never mixed with search-tree nodes).
+
+### D. MCTS Corner Cases & Test Fixtures
 1. **Immediate Win**: If root has an immediate winning move, rollout simulations and UCT rapidly converge visits onto the winning column.
 2. **Forced Block**: If opponent threatens an immediate win, simulations that fail to block lose immediately, concentrating visits on the blocking column.
 3. **Terminal Root**: If the board supplied to `select_move()` is already full or terminal, return `(None, telemetry)` without entering the MCTS loop.
 4. **Reproducibility**: Use an isolated `self.rng = random.Random(seed)` instance within rollouts. Two `MCTSAgent(seed=42)` runs on identical boards produce 100% identical move choices and visit distributions.
+5. **Alternating Player Selection Test**: Verify root children track rewards from `self.player_id`'s perspective while depth-1 children track rewards from `self.opp_id`'s perspective.
 
 ---
 
@@ -216,8 +231,11 @@ In 2-player zero-sum games, storing rewards from the perspective of the player w
   - Strictly `null` for all tree-search agents and baseline agents (never mixed with search-tree nodes).
 
 ### B. Performance Tests (Avoiding Unsound Assumptions)
-- We do **not** assert that Optimized Alpha-Beta visits fewer nodes than Alpha-Beta on every arbitrary board. Instead, performance assertions use **deterministic board fixtures**:
-  1. **Symmetrical Opening Fixture** (`empty_board`): Center-outward move ordering evaluated at depth 4 is mathematically guaranteed to visit fewer nodes than left-to-right Alpha-Beta (`optimized_nodes < alphabeta_nodes`).
+- We do **not** assert that Optimized Alpha-Beta visits fewer nodes than Alpha-Beta on every arbitrary board. Instead, performance assertions use **deterministic board fixtures** and treat move ordering efficiency as an empirical hypothesis to validate:
+  1. **Move Ordering Performance Validation (Deterministic Fixture)**:
+     - Center-outward move ordering prioritizes central columns where branch cutoffs often occur earlier, but search tree size is governed by move ordering dynamics and cannot be assumed unconditionally without measurement.
+     - A designated deterministic fixture (e.g. symmetrical opening board evaluated at depth 4) will be evaluated by both `AlphaBetaAgent` (left-to-right) and `OptimizedAlphaBetaAgent` (center-outward).
+     - The test validates that `OptimizedAlphaBetaAgent` returns the exact same optimal minimax root score and a valid optimal move, and records measured `nodes_evaluated` for empirical comparison rather than asserting an unmeasured unconditional guarantee.
   2. **Transposition-Rich Midgame Fixture**: Board with reachable transpositions evaluated at depth 4 asserts `transposition_hits > 0`.
   3. **Pruning Fixture**: Midgame position evaluated at depth 4 asserts `alphabeta_nodes < minimax_nodes` and `pruned_nodes > 0`.
 
@@ -300,8 +318,8 @@ class MoveRequest(BaseModel):
    - Assert `optimized_agent.root_score == alphabeta_agent.root_score`.
 2. `test_optimized_alphabeta_unique_move_equivalence`:
    - Positions with a unique best move: assert `optimized_move == alphabeta_move`.
-3. `test_optimized_alphabeta_move_ordering_efficiency`:
-   - Symmetrical opening board: assert `optimized_nodes < alphabeta_nodes` due to center-outward ordering.
+3. `test_optimized_alphabeta_move_ordering_validation`:
+   - Evaluates deterministic opening fixture at depth 4: logs `nodes_evaluated` for both Alpha-Beta and Optimized Alpha-Beta, asserts score equivalence, and validates empirical move ordering behavior without unverified unconditional claims.
 4. `test_transposition_table_enabled_vs_disabled`:
    - Assert `OptimizedAlphaBetaAgent(use_tt=True)` and `OptimizedAlphaBetaAgent(use_tt=False)` return identical scores and valid optimal moves.
 5. `test_transposition_table_cache_hits`:
@@ -321,9 +339,11 @@ class MoveRequest(BaseModel):
 4. `test_mcts_iteration_budget_enforcement`:
    - With `iterations=350`, assert `telemetry["mcts_iterations"] == 350` and `telemetry["mcts_simulations"] == 350`.
 5. `test_mcts_terminal_root_handling`:
-   - Calling on full board returns `(None, telemetry)` without crashing.
+   - Calling on full board returns `(None, telemetry)` without crashing, reporting `mcts_iterations == 0` and `mcts_simulations == 0`.
 6. `test_mcts_telemetry_isolation`:
    - Assert `nodes_evaluated`, `pruned_nodes`, `search_depth`, and `transposition_hits` are strictly `None`.
+7. `test_mcts_alternating_player_selection_and_rewards`:
+   - Validates that root children accumulate rewards from `self.player_id`'s perspective while depth-1 children accumulate rewards from `self.opp_id`'s perspective, verifying symmetric UCT child selection across player turns.
 
 ### E. API & Legacy Compatibility Tests
 1. `test_api_advanced_agents_execution`:
