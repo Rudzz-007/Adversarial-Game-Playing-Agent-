@@ -51,8 +51,8 @@ updated: 2026-10-23
 ---
 
 ### Phase 4: Baseline AI Agents (Random & Greedy)
-**Status**: ⬜ Not Started  
-**Objective**: Implement abstract `BaseAgent`, `RandomAgent` (with seed support), and `GreedyAgent` (immediate win prioritization and 1-ply threat blocking), wire to `/api/game/{id}/ai-move`, and display move metrics (decision time ms).  
+**Status**: ✅ Complete  
+**Objective**: Implement abstract `BaseAgent`, `RandomAgent` (with seed support), and `GreedyAgent` (immediate win prioritization, 1-ply threat blocking, blunder avoidance, and center-outward tie-breaking), wire to `POST /api/ai-move`, and display move metrics (decision time ms).  
 **Requirements**: REQ-FR-04, REQ-FR-05, REQ-FR-09  
 **Depends on**: Phase 3  
 **Deliverable**: Functional Human vs AI baseline gameplay with real-time telemetry.

@@ -79,21 +79,56 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from typing import Optional
+from pydantic import field_validator
+from app.agents import get_agent
+from app.core.validation import validate_board_structure
+
 # Mount modular routers
 app.include_router(health_router)
 app.include_router(agent_router)
 
-# Preserved existing MoveRequest schema for backward compatibility
+# Preserved existing MoveRequest schema with backward-compatible extensions
 class MoveRequest(BaseModel):
     board: list[list[int]]
-    depth: int = 4  # 2: Easy, 4: Medium, 6: Hard
+    depth: Optional[int] = 4  # 2: Easy, 4: Medium, 6: Hard
+    agent: Optional[str] = "minimax"
+    seed: Optional[int] = None
 
-# Preserved backward-compatible endpoint for existing React frontend
+    @field_validator("seed", mode="before")
+    @classmethod
+    def validate_seed(cls, v):
+        if v is not None:
+            if isinstance(v, bool) or not isinstance(v, int):
+                raise ValueError("Seed must be an integer, not boolean.")
+        return v
+
+# Endpoint for AI move calculation supporting Minimax, Random, and Greedy agents
 @app.post("/api/ai-move")
 def ai_move(request: MoveRequest):
-    col, _ = minimax(request.board, request.depth, -math.inf, math.inf, True)
+    validate_board_structure(request.board)
+    agent_id = request.agent or "minimax"
+
+    if agent_id not in ("minimax", "random", "greedy"):
+        raise GameRuleException(
+            code="INVALID_AGENT",
+            message=f"Unknown agent '{agent_id}'. Supported: 'random', 'greedy', 'minimax'.",
+            status_code=400,
+        )
+
+    if agent_id == "minimax":
+        col, _ = minimax(request.board, request.depth or 4, -math.inf, math.inf, True)
+        row = get_next_open_row(request.board, col) if col is not None else -1
+        return {
+            "column": col,
+            "row": row,
+        }
+
+    agent = get_agent(agent_id, seed=request.seed)
+    col, telemetry = agent.select_move(request.board)
     row = get_next_open_row(request.board, col) if col is not None else -1
     return {
         "column": col,
         "row": row,
+        "telemetry": telemetry,
     }

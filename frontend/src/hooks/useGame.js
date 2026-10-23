@@ -59,7 +59,7 @@ export function useGame() {
       setErrorCode(null);
 
       try {
-        const response = await fetchAIMove(currentBoard, depth);
+        const response = await fetchAIMove(currentBoard, depth, selectedAlgorithm);
 
         // Strict AI response validation against legal physical gravity
         const validation = validateAIResponse(currentBoard, response);
@@ -72,17 +72,26 @@ export function useGame() {
           return;
         }
 
-        const { column, row, latencyMs } = response;
+        const { column, row, latencyMs, telemetry: serverTelemetry } = response;
         const newBoard = cloneBoard(currentBoard);
         dropPiece(newBoard, row, column, PLAYER_2);
 
-        // Update telemetry with genuine measured metrics
+        // Update telemetry with authentic measured metrics
+        const algoLabels = {
+          minimax: 'Minimax (Active)',
+          random: 'Random Agent (Active)',
+          greedy: 'Greedy Agent (Active)',
+        };
+        const algorithmName = algoLabels[selectedAlgorithm] || `${selectedAlgorithm} (Active)`;
+        const decisionTimeMs = serverTelemetry?.decision_time_ms ?? latencyMs;
+        const searchDepth = serverTelemetry?.search_depth ?? (selectedAlgorithm === 'minimax' ? depth : null);
+
         setTelemetry({
-          decisionTimeMs: latencyMs,
-          searchDepth: depth,
-          nodesEvaluated: null,
-          prunedNodes: null,
-          algorithmName: 'Minimax (Active)',
+          decisionTimeMs,
+          searchDepth,
+          nodesEvaluated: serverTelemetry?.nodes_evaluated ?? null,
+          prunedNodes: serverTelemetry?.pruned_nodes ?? null,
+          algorithmName,
         });
 
         const newHistory = [
@@ -134,7 +143,7 @@ export function useGame() {
         inFlightRef.current = false;
       }
     },
-    [depth, moveHistory]
+    [depth, moveHistory, selectedAlgorithm]
   );
 
   /**

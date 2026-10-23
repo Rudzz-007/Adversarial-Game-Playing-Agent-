@@ -8,13 +8,13 @@
 - [x] Phase 1 Plan reviewed, approved, and executed (7/7 tests passed)
 - [x] Phase 2 Plan reviewed, approved, and executed (28/28 tests passed)
 - [x] Phase 3 Plan reviewed, approved, and executed (10/10 frontend tests, 31/31 backend tests passed)
-- [x] Author & Revise Phase 4 Execution Plan (`.gsd/phases/4/PLAN.md`) — pending user review
+- [x] Phase 4 Plan reviewed, approved, and executed (60/60 backend tests, 10/10 frontend tests passed)
 
 ### Roadmap Phases
 - [x] Phase 1: Foundation & API Contract
 - [x] Phase 2: Core Game Engine & State Validation
 - [x] Phase 3: Interactive Frontend Interface
-- [ ] Phase 4: Baseline AI Agents (Random & Greedy)
+- [x] Phase 4: Baseline AI Agents (Random & Greedy)
 - [ ] Phase 5: Adversarial Search (Minimax, Alpha-Beta, Optimized, MCTS)
 - [ ] Phase 6: Benchmarking & Analytics Dashboard
 - [ ] Phase 7: Integration, Verification & Release Polish

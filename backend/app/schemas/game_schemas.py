@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 class TelemetryMetrics(BaseModel):
     decision_time_ms: float = Field(..., description="Decision computation time in milliseconds")
@@ -22,6 +22,16 @@ class MoveRequest(BaseModel):
     # Backward compatibility with existing prototype:
     board: Optional[List[List[int]]] = Field(None, description="Existing prototype board state")
     depth: Optional[int] = Field(4, description="Search depth for legacy endpoint")
+    agent: Optional[str] = Field("minimax", description="Selected AI algorithm ID ('minimax', 'random', 'greedy')")
+    seed: Optional[int] = Field(None, description="Optional seed for random agent")
+
+    @field_validator("seed", mode="before")
+    @classmethod
+    def validate_seed(cls, v):
+        if v is not None:
+            if isinstance(v, bool) or not isinstance(v, int):
+                raise ValueError("Seed must be an integer, not boolean.")
+        return v
 
 class GameStateResponse(BaseModel):
     game_id: str = Field(..., description="Unique game session identifier")

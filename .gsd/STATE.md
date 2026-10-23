@@ -6,16 +6,18 @@
   - Phase 1 — Foundation & API Contract (✅ Complete, 7/7 tests passed)
   - Phase 2 — Core Game Engine & State Validation (✅ Complete, 31/31 tests passed including safeguards)
   - Phase 3 — Interactive Frontend Interface (✅ Complete, 10/10 frontend tests, 0 lint errors, clean build, 31/31 backend tests passed)
-- **Current Phase**: Phase 4 — Baseline AI Agents (Random & Greedy) (📋 Plan Revised, Awaiting User Review)
+  - Phase 4 — Baseline AI Agents: Random & Greedy (✅ Complete, 60/60 backend tests passed, 10/10 frontend tests passed, 0 lint errors, clean build)
+- **Current Phase**: Phase 4 Complete — Paused for User Review
 - **Specification Status**: `FINALIZED`
 - **Planning Lock**: `RELEASED`
-- **Next Step**: Await user review and approval of revised Phase 4 Execution Plan (`.gsd/phases/4/PLAN.md`)
+- **Next Step**: Await user explicit approval before planning Phase 5 (Adversarial Search: Alpha-Beta, Optimized Alpha-Beta, MCTS)
 
 ## Last Session Summary
-- Implemented complete modern React component hierarchy: `GameBoard`, `GameCell`, `GameControls`, `GameStatus`, `MetricsPanel`, `ErrorBanner`, and `Navbar`.
-- Implemented pure frontend Connect Four rules engine in `gameLogic.js` mirroring Phase 2 canonical rules, including deterministic 4-coordinate win line extraction and win-over-draw precedence.
-- Created `useGame.js` hook enforcing in-flight mutex guards, strict game mode checking (Human vs Human operates client-side with 0 API calls), safe AI retries on the unchanged board, and strict AI response validation against legal physical gravity.
-- Built tab navigation (`HomePage`, `GamePage`, `AnalyticsPage`) via React state without external routing dependencies.
-- Added native zero-dependency automated unit tests (`npm test` via `node:test`): 10/10 tests passed.
-- Verified frontend code quality: `npm run lint` (`oxlint`) passed with 0 warnings/errors; `npm run build` bundled cleanly in 279ms.
-- Verified backend integrity: All 31 pytest tests continue to pass with zero regressions.
+- Implemented modular agent architecture conforming to PRD §6.1–6.3: `BaseAgent`, `RandomAgent`, `GreedyAgent`, and `AgentFactory` (`get_agent`).
+- Guaranteed strict board immutability across hypothetical and simulated evaluations via deep copying.
+- Implemented `GreedyAgent` 1-ply tactical lookahead with immediate win cutoff, candidate move evaluation on copied boards, full legal opponent reply checking (blunder avoidance), split-threat fork blocking via center-outward order (`[3, 2, 4, 1, 5, 0, 6]`), static heuristic scoring, and accurate telemetry (`search_depth=1`, inapplicable tree stats `null`).
+- Preserved existing `backend/ai_agent.py` and exact legacy Minimax request/response contract (`{"column": col, "row": row}`) when `agent` is omitted.
+- Extended `POST /api/ai-move` with backward-compatible `agent` and `seed` parameters and standard error envelopes (`INVALID_AGENT`, `VALIDATION_ERROR`).
+- Added comprehensive 29-test suite in `backend/tests/test_agents.py` verifying all tactical priorities, safeguards, and contracts.
+- Activated Random and Greedy agent selection in frontend (`useGame.js`, `api.js`, `GameControls.jsx`) while preserving Phase 5 badges for remaining algorithms.
+- Full verification passed cleanly: 60/60 backend tests, 10/10 frontend tests, 0 lint warnings/errors, clean production build.

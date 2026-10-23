@@ -69,11 +69,15 @@ export function GameControls({
               onChange={(e) => onAlgorithmChange(e.target.value)}
               disabled={disabled}
             >
-              {displayAgents.map((agent) => (
-                <option key={agent.id} value={agent.id}>
-                  {agent.id === 'minimax' ? `${agent.name} (Active)` : `${agent.name} (Phase 4/5)`}
-                </option>
-              ))}
+              {displayAgents.map((agent) => {
+                const isActive = ['minimax', 'random', 'greedy'].includes(agent.id);
+                const label = isActive ? `${agent.name} (Active)` : `${agent.name} (Phase 5)`;
+                return (
+                  <option key={agent.id} value={agent.id} disabled={!isActive}>
+                    {label}
+                  </option>
+                );
+              })}
             </select>
           </div>
 

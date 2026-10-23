@@ -61,24 +61,31 @@ export async function fetchAgents() {
 
 /**
  * Request an AI move from POST /api/ai-move.
- * Preserves exact existing success contract: returns { column, row }.
+ * Preserves exact existing success contract: returns { column, row, telemetry, latencyMs }.
  * Measures real round-trip latency in milliseconds.
  *
  * @param {number[][]} board - Current 6x7 board grid.
  * @param {number} depth - Search depth (2, 4, 6).
- * @returns {Promise<{ column: number, row: number, latencyMs: number }>}
+ * @param {string} agent - Algorithm ID ('minimax', 'random', 'greedy').
+ * @param {number|null} seed - Optional integer seed for reproducible random agent.
+ * @returns {Promise<{ column: number, row: number, telemetry?: object, latencyMs: number }>}
  */
-export async function fetchAIMove(board, depth = 4) {
+export async function fetchAIMove(board, depth = 4, agent = 'minimax', seed = null) {
   const startTime = performance.now();
 
   try {
+    const payload = { board, depth, agent };
+    if (seed !== null && seed !== undefined) {
+      payload.seed = seed;
+    }
+
     const response = await fetch(`${API_BASE}/api/ai-move`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify({ board, depth }),
+      body: JSON.stringify(payload),
     });
 
     const latencyMs = Math.round(performance.now() - startTime);
@@ -107,6 +114,7 @@ export async function fetchAIMove(board, depth = 4) {
     return {
       column: data.column,
       row: data.row,
+      telemetry: data.telemetry || null,
       latencyMs,
     };
   } catch (error) {
