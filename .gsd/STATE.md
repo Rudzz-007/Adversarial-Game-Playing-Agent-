@@ -6,10 +6,10 @@
   - Phase 1 — Foundation & API Contract (✅ Complete, 7/7 tests passed)
   - Phase 2 — Core Game Engine & State Validation (✅ Complete, 31/31 tests passed including safeguards)
   - Phase 3 — Interactive Frontend Interface (✅ Complete, 10/10 frontend tests, 0 lint errors, clean build, 31/31 backend tests passed)
-- **Current Phase**: Phase 4 — Baseline AI Agents (Random & Greedy) (📋 Plan Authored, Awaiting User Review)
+- **Current Phase**: Phase 4 — Baseline AI Agents (Random & Greedy) (📋 Plan Revised, Awaiting User Review)
 - **Specification Status**: `FINALIZED`
 - **Planning Lock**: `RELEASED`
-- **Next Step**: Await user review and approval of Phase 4 Execution Plan (`.gsd/phases/4/PLAN.md`)
+- **Next Step**: Await user review and approval of revised Phase 4 Execution Plan (`.gsd/phases/4/PLAN.md`)
 
 ## Last Session Summary
 - Implemented complete modern React component hierarchy: `GameBoard`, `GameCell`, `GameControls`, `GameStatus`, `MetricsPanel`, `ErrorBanner`, and `Navbar`.
