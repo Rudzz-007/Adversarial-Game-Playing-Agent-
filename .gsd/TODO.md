@@ -6,7 +6,8 @@
 - [x] User review of `SPEC.md` and transition status to `FINALIZED`
 - [x] Planning Lock released for implementation planning
 - [x] Phase 1 Plan reviewed, approved, and executed
-- [ ] Author and review Phase 2 Execution Plan (`.gsd/phases/2/PLAN.md`)
+- [ ] Review and approve Phase 2 Execution Plan (`.gsd/phases/2/PLAN.md`)
+- [ ] Execute Phase 2: Core Game Engine & State Validation
 
 ### Roadmap Phases
 - [x] Phase 1: Foundation & API Contract

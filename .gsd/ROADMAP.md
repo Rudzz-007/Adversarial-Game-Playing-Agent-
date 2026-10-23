@@ -33,7 +33,7 @@ updated: 2026-10-23
 ---
 
 ### Phase 2: Core Game Engine & State Validation
-**Status**: ⬜ Not Started  
+**Status**: 🔄 In Planning  
 **Objective**: Build and modularize the 6×7 grid engine (`core/game_engine.py`, `core/game_state.py`, `core/validation.py`) with piece dropping, legal column discovery, horizontal/vertical/diagonal win checking, draw detection, and automated `pytest` test suite.  
 **Requirements**: REQ-FR-02, REQ-FR-06, REQ-FR-07, REQ-NFR-02, REQ-NFR-05  
 **Depends on**: Phase 1  
