@@ -3,8 +3,10 @@
 ## Current Milestone: v1.0
 
 ### Planning & Review
-- [ ] User review of `SPEC.md` and transition status to `FINALIZED`
-- [ ] Begin Phase 1: Foundation & API Contract
+- [x] User review of `SPEC.md` and transition status to `FINALIZED`
+- [x] Planning Lock released for implementation planning
+- [ ] Review and approve Phase 1 Implementation Plan
+- [ ] Execute Phase 1: Foundation & API Contract
 
 ### Roadmap Phases
 - [ ] Phase 1: Foundation & API Contract

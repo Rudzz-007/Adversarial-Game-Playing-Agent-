@@ -22,7 +22,7 @@ Requirements derived directly from `docs/Adversarial_Game_Playing_Agent_PRD.pdf`
 | **REQ-FR-06** | Strict move legality validation (reject full columns, invalid coordinates, wrong-turn moves, terminal moves) | FR-06 | Phase 2 | Pending |
 | **REQ-FR-07** | Exhaustive win detection (horizontal, vertical, positive diagonal, negative diagonal) and full-board draw detection | FR-07 | Phase 2 | Pending |
 | **REQ-FR-08** | Control actions: New Game, Restart, Reset metrics, turn toggling, and AI-vs-AI controls | FR-08 | Phase 3 | Pending |
-| **REQ-FR-09** | Real-time AI move visualization: return empirical metrics and candidate scores; use `null` for inapplicable metrics (rendered as `N/A`), preserve measured `0`, and do not claim full reasoning traces | FR-09, §13.3 | Phase 3 & 4 | Pending |
+| **REQ-FR-09** | Real-time AI move visualization: return empirical metrics and candidate scores; strictly define `nodes_evaluated` as search-tree nodes (Minimax/AB); keep MCTS iterations and simulations separate (never mixed); use `null` for inapplicable metrics (rendered as `N/A`), preserve measured `0`, and do not claim full reasoning traces | FR-09, §13.3 | Phase 3 & 4 | Pending |
 | **REQ-FR-10** | Analytics dashboard displaying W/D/L records, win rates, latency percentiles, search depth/node comparisons | FR-10 | Phase 6 | Pending |
 | **REQ-FR-11** | Head-to-head benchmarking harness with alternating starting players, reproducible seeds, and CSV/JSON export | FR-11 | Phase 6 | Pending |
 | **REQ-FR-12** | Standardized error handling: all errors return `{"error": {"code": "...", "message": "..."}}`. FastAPI exception handlers catch validation & runtime errors, suppressing internal traces | FR-12, §12.9 | Phase 1, 3, 7 | Pending |

@@ -1,9 +1,9 @@
 # SPEC.md — Project Specification
 
 > **Project**: Adversarial Game-Playing Agent — Connect Four AI  
-> **Status**: `DRAFT` (Awaiting User Review to finalize Planning Lock)  
+> **Status**: `FINALIZED`  
 > **Primary Source of Truth**: `docs/Adversarial_Game_Playing_Agent_PRD.pdf` (v1.0)  
-> **Planning Lock**: No implementation code until status is `FINALIZED`.
+> **Planning Lock**: RELEASED (Approved for Phase Planning & Execution)
 
 ---
 
@@ -232,7 +232,10 @@ Metrics returned by agents must strictly distinguish between **measured zeros** 
 | `mcts_simulations` | `null` | `null` | `null` | `null` | `null` | Measured |
 | `candidate_scores` | `null` | 1-ply scores | Minimax scores | AB scores | AB scores | Visit counts & win % |
 
-> **Transparency Note**: Telemetry represents concrete empirical measurements and candidate scores. It does **not** claim to provide a full internal reasoning trace.
+#### Metric Definition Standards:
+- **`nodes_evaluated`**: Strictly defined as the number of search-tree nodes evaluated by game-tree algorithms for which this metric is implemented (Minimax, Alpha-Beta, Optimized Alpha-Beta).
+- **MCTS Metrics Separation**: MCTS iteration counts (`mcts_iterations`) and simulation/rollout counts (`mcts_simulations`) are discrete simulation metrics. They are strictly tracked independently and are **never** combined or confused with search-tree node counts.
+- **Transparency Note**: Telemetry represents concrete empirical measurements and candidate scores. It does **not** claim to provide a full internal reasoning trace.
 
 ---
 
