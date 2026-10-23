@@ -5,10 +5,10 @@ wave: 1
 gap_closure: false
 ---
 
-# Plan 2.1 (Final): Core Game Engine, State Validation & Comprehensive Rules Testing
+# Plan 2.1 (Verified Final): Core Game Engine, State Validation & Comprehensive Rules Testing
 
 ## Objective
-Establish the authoritative single source of truth for Connect Four game state and rules in `backend/app/core/` (`game_engine.py`, `game_state.py`, `validation.py`). Implement exhaustive 4-in-a-row win detection across all directions with deterministic 4-coordinate extraction, strict win-over-draw precedence, full-board draw validation using a verified fixture, strict boolean-column rejection, turn-transition invariants, and domain-to-error-envelope mapping, backed by an exhaustive `pytest` suite while maintaining 100% backward compatibility for `backend/game_engine.py`, `backend/ai_agent.py`, and `POST /api/ai-move`.
+Establish the authoritative single source of truth for Connect Four game state and rules in `backend/app/core/` (`game_engine.py`, `game_state.py`, `validation.py`). Implement exhaustive 4-in-a-row win detection across all directions with deterministic 4-coordinate extraction, strict win-over-draw precedence, full-board draw validation using a verified legal 42-move replay sequence, strict boolean-column rejection, turn-transition invariants, and domain-to-error-envelope mapping, backed by an exhaustive `pytest` suite while maintaining 100% backward compatibility for `backend/game_engine.py`, `backend/ai_agent.py`, and `POST /api/ai-move`.
 
 ## Context
 Load these files for context:
@@ -59,13 +59,23 @@ Load these files for context:
     4. Negative Diagonal ($\searrow$): top-to-bottom ($r = 0 \to 2$), left-to-right ($c = 0 \to 3$).
   - Coordinates are returned as a sorted list of four coordinate pairs: `[(r0, c0), (r1, c1), (r2, c2), (r3, c3)]`.
 
-### 4. Win vs. Draw Precedence & Concrete Verified Draw Fixture
+### 4. Win vs. Draw Precedence & Verified Reachable Draw Fixture
 - **Win strictly precedes Draw**: If the 42nd piece (filling the board) completes a 4-in-a-row, status is `"won"` with `winner = current_player` and valid `winning_coords`. It is **never** classified as a draw.
 - **Draw Definition**: `is_draw(board) == True` if and only if:
   1. No winning 4-in-a-row exists for either player (`check_win(board, 1) == False` and `check_win(board, 2) == False`), AND
   2. The board is full (`is_board_full(board) == True`).
-- **Concrete Verified Draw Fixture**:
-  Empirically verified in Python test runner with 42 discs (21 ones, 21 twos, all columns full, 0 wins in all 4 directions):
+- **Verified Legal 42-Move Replay Sequence**:
+  The following sequence of 42 column moves has been empirically verified to execute legally under gravity alternating Player 1 and Player 2, producing no winner at any intermediate step and reaching the complete full-board draw:
+  ```python
+  DRAW_MOVES_SEQUENCE = [
+      6, 6, 6, 6, 6, 5, 4, 5, 5, 6,
+      4, 4, 5, 4, 4, 3, 4, 3, 3, 5,
+      2, 5, 2, 2, 3, 2, 2, 1, 2, 1,
+      1, 3, 0, 3, 0, 0, 1, 0, 0, 1,
+      0, 1
+  ]
+  ```
+- **Resulting Verified Draw Board Fixture**:
   ```python
   DRAW_BOARD_FIXTURE = [
       [1, 2, 1, 2, 1, 2, 2],
@@ -76,6 +86,8 @@ Load these files for context:
       [1, 2, 1, 2, 1, 2, 1],
   ]
   ```
+  - Exactly 42 discs (21 ones, 21 twos).
+  - Reachable from empty board through `DRAW_MOVES_SEQUENCE` without premature victory.
   - `check_win(DRAW_BOARD_FIXTURE, 1) == False`
   - `check_win(DRAW_BOARD_FIXTURE, 2) == False`
   - `is_board_full(DRAW_BOARD_FIXTURE) == True`
@@ -202,7 +214,10 @@ Load these files for context:
        - `test_positive_diagonal_win`: verify win from bottom-left to top-right ($\nearrow$); verify exact 4 coordinates.
        - `test_negative_diagonal_win`: verify win from top-left to bottom-right ($\searrow$); verify exact 4 coordinates.
        - `test_deterministic_winning_coords_5_in_a_row`: construct 5-in-a-row and verify engine deterministically returns documented 4-coordinate sequence.
-       - `test_valid_full_board_draw_fixture`: test the verified 42-disc fixture (`DRAW_BOARD_FIXTURE`); verify `is_board_full == True`, `is_draw == True`, `check_win == False` for both players.
+       - `test_draw_game_replay_sequence_and_fixture`:
+         - Replay `DRAW_MOVES_SEQUENCE` from empty board.
+         - Verify `check_win` is False at every intermediate move $1 \dots 41$.
+         - Verify at move 42 that board equals `DRAW_BOARD_FIXTURE`, `is_board_full` is True, `is_draw` is True, and `check_win` is False for both players.
        - `test_full_board_win_takes_precedence_over_draw`: 42nd piece creates a win; verify `check_win == True`, `is_draw == False`, status is `"won"`.
        - `test_legacy_minimax_regression_execution`:
          - Call matching existing signature: `col, score = minimax(board, depth=2, alpha=-math.inf, beta=math.inf, maximizing_player=True)`
@@ -235,7 +250,8 @@ After all tasks complete, verify:
 - [ ] `backend/game_engine.py` delegates to `app.core.game_engine` exporting all legacy symbols (`ROWS, COLS, EMPTY, PLAYER, AI, create_board, is_valid_location, get_next_open_row, drop_piece, check_win, get_valid_locations`).
 - [ ] Existing `minimax` function in `backend/ai_agent.py` executes successfully through the bridge, returns a legal column for the test board, and matches the existing function signature.
 - [ ] Deterministic 4-coordinate sequence is returned when 4 or more connected pieces exist.
-- [ ] Win strictly takes precedence over draw; verified with concrete full-board draw fixture (`DRAW_BOARD_FIXTURE`) and full-board win fixture.
+- [ ] Win strictly takes precedence over draw; verified with full-board win fixture.
+- [ ] Verified legal 42-move sequence (`DRAW_MOVES_SEQUENCE`) replays without premature win, reaches full board, and yields `is_draw == True`.
 - [ ] Booleans (`True`, `False`), non-integers, out-of-range, and full columns are rejected without leaking low-level exceptions.
 - [ ] Domain exceptions format into standardized error envelope `{"error": {"code": "...", "message": "..."}}`.
 - [ ] Moves after game win or draw are strictly locked and rejected.
