@@ -64,6 +64,80 @@ def test_state_boolean_column_rejected():
     assert game.current_player == initial_turn
 
 
+def test_state_immutability_on_any_invalid_move():
+    """
+    Safeguard 1 verification:
+    Confirm that an invalid GameState.apply_move() call leaves the board,
+    current player, status, winner, winning_coords, and move history completely unchanged.
+    """
+    game = GameState()
+    # Play 3 legal moves so the game is in a non-initial state
+    game.apply_move(3)  # P1
+    game.apply_move(3)  # P2
+    game.apply_move(2)  # P1
+
+    snapshot_board = [r[:] for r in game.board]
+    snapshot_player = game.current_player
+    snapshot_status = game.status
+    snapshot_winner = game.winner
+    snapshot_coords = game.winning_coords
+    snapshot_history = [dict(m) for m in game.move_history]
+    snapshot_count = game.move_count
+
+    def assert_state_unchanged():
+        assert game.board == snapshot_board
+        assert game.current_player == snapshot_player
+        assert game.status == snapshot_status
+        assert game.winner == snapshot_winner
+        assert game.winning_coords == snapshot_coords
+        assert game.move_history == snapshot_history
+        assert game.move_count == snapshot_count
+
+    # 1. Boolean values
+    for val in [True, False]:
+        with pytest.raises(InvalidMoveException):
+            game.apply_move(val)
+        assert_state_unchanged()
+
+    # 2. Out of bounds
+    for col in [-10, -1, 7, 8, 100]:
+        with pytest.raises(InvalidMoveException):
+            game.apply_move(col)
+        assert_state_unchanged()
+
+    # 3. Invalid types
+    for val in ["2", 2.0, None, [1], {"col": 1}]:
+        with pytest.raises(InvalidMoveException):
+            game.apply_move(val)
+        assert_state_unchanged()
+
+    # 4. Full column (fill column 3 to capacity)
+    # Column 3 currently has 2 pieces (row 5, row 4). Add 4 more.
+    game.apply_move(3)  # P2 (row 3)
+    game.apply_move(3)  # P1 (row 2)
+    game.apply_move(3)  # P2 (row 1)
+    game.apply_move(3)  # P1 (row 0) - full!
+
+    full_snapshot_board = [r[:] for r in game.board]
+    full_snapshot_player = game.current_player
+    full_snapshot_status = game.status
+    full_snapshot_winner = game.winner
+    full_snapshot_coords = game.winning_coords
+    full_snapshot_history = [dict(m) for m in game.move_history]
+    full_snapshot_count = game.move_count
+
+    with pytest.raises(ColumnFullException):
+        game.apply_move(3)
+
+    assert game.board == full_snapshot_board
+    assert game.current_player == full_snapshot_player
+    assert game.status == full_snapshot_status
+    assert game.winner == full_snapshot_winner
+    assert game.winning_coords == full_snapshot_coords
+    assert game.move_history == full_snapshot_history
+    assert game.move_count == full_snapshot_count
+
+
 def test_state_invalid_move_type_and_range():
     """Verify out-of-range columns and strings are rejected without mutating state."""
     game = GameState()

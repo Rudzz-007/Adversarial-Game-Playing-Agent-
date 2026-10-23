@@ -67,6 +67,45 @@ def test_standardized_error_format_on_not_found():
     assert data["error"]["code"] == "NOT_FOUND"
     assert "Traceback" not in response.text
 
+
+def test_domain_exception_handler_returns_standard_envelope():
+    """Safeguard 2 verification: Verify domain exceptions map to PRD §12.9 standard error format."""
+    from app.core.validation import ColumnFullException
+    
+    @app.get("/api/test-domain-error-route")
+    def _test_route():
+        raise ColumnFullException(code="INVALID_MOVE", message="The selected column is full.")
+
+    response = client.get("/api/test-domain-error-route")
+    assert response.status_code == 400
+    assert response.json() == {
+        "error": {
+            "code": "INVALID_MOVE",
+            "message": "The selected column is full."
+        }
+    }
+
+
+def test_unexpected_exception_suppresses_stack_trace():
+    """Safeguard 2 verification: Verify unhandled 500 exceptions do not leak stack traces or internals."""
+    @app.get("/api/test-unhandled-internal-error")
+    def _test_unhandled():
+        raise RuntimeError("Secret internal failure with private path details C:\\Sensitive\\Data")
+
+    client_with_500 = TestClient(app, raise_server_exceptions=False)
+    response = client_with_500.get("/api/test-unhandled-internal-error")
+    assert response.status_code == 500
+    data = response.json()
+    assert data == {
+        "error": {
+            "code": "INTERNAL_ERROR",
+            "message": "An unexpected internal server error occurred."
+        }
+    }
+    assert "Traceback" not in response.text
+    assert "RuntimeError" not in response.text
+    assert "Sensitive" not in response.text
+
 def test_backward_compatibility_ai_move():
     """Verify existing prototype endpoint POST /api/ai-move preserves functional compatibility."""
     empty_board = [[0 for _ in range(7)] for _ in range(6)]
