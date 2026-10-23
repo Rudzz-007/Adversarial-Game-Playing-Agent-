@@ -5,10 +5,10 @@ wave: 1
 gap_closure: false
 ---
 
-# Plan 2.1 (Revised): Core Game Engine, State Validation & Comprehensive Rules Testing
+# Plan 2.1 (Final): Core Game Engine, State Validation & Comprehensive Rules Testing
 
 ## Objective
-Establish the authoritative single source of truth for Connect Four game state and rules in `backend/app/core/` (`game_engine.py`, `game_state.py`, `validation.py`). Implement exhaustive 4-in-a-row win detection across all directions with deterministic 4-coordinate extraction, strict win-over-draw precedence, full-board draw validation, turn-transition invariants, and domain-to-error-envelope mapping, backed by an exhaustive `pytest` suite while maintaining 100% backward compatibility for `backend/game_engine.py`, `backend/ai_agent.py`, and `POST /api/ai-move`.
+Establish the authoritative single source of truth for Connect Four game state and rules in `backend/app/core/` (`game_engine.py`, `game_state.py`, `validation.py`). Implement exhaustive 4-in-a-row win detection across all directions with deterministic 4-coordinate extraction, strict win-over-draw precedence, full-board draw validation using a verified fixture, strict boolean-column rejection, turn-transition invariants, and domain-to-error-envelope mapping, backed by an exhaustive `pytest` suite while maintaining 100% backward compatibility for `backend/game_engine.py`, `backend/ai_agent.py`, and `POST /api/ai-move`.
 
 ## Context
 Load these files for context:
@@ -37,7 +37,11 @@ Load these files for context:
 
 ### 2. Move Legality & Robust Input Validation
 - Prevent low-level exceptions (`IndexError`, `TypeError`, `ValueError`) by strictly validating moves before board access:
-  - **Type Validation**: `col` must be an integer (`isinstance(col, int) and not isinstance(col, bool)`). Otherwise raise `InvalidMoveException(code="INVALID_MOVE", message="Column must be an integer.")`.
+  - **Explicit Boolean & Type Validation**: In Python `isinstance(True, int)` evaluates to `True`. The validator must explicitly check:
+    ```python
+    if isinstance(col, bool) or not isinstance(col, int):
+        raise InvalidMoveException(code="INVALID_MOVE", message="Column must be an integer, not boolean.")
+    ```
   - **Range Validation**: `col` must satisfy $0 \le c \le 6$. Otherwise raise `InvalidMoveException(code="INVALID_MOVE", message=f"Column index {col} out of bounds (0-6).")`.
   - **Capacity Validation**: `board[0][col] == EMPTY`. If full, raise `ColumnFullException(code="INVALID_MOVE", message=f"The selected column {col} is full.")`.
   - **Board Structure Validation**: When validating an external board, verify it is a list of exactly 6 lists, each containing exactly 7 integers in $\{0, 1, 2\}$. Otherwise raise `InvalidBoardException(code="VALIDATION_ERROR", message="Board must be a 6x7 integer matrix containing only 0, 1, or 2.")`.
@@ -55,18 +59,31 @@ Load these files for context:
     4. Negative Diagonal ($\searrow$): top-to-bottom ($r = 0 \to 2$), left-to-right ($c = 0 \to 3$).
   - Coordinates are returned as a sorted list of four coordinate pairs: `[(r0, c0), (r1, c1), (r2, c2), (r3, c3)]`.
 
-### 4. Win vs. Draw Precedence & Full-Board Draw Fixtures
+### 4. Win vs. Draw Precedence & Concrete Verified Draw Fixture
 - **Win strictly precedes Draw**: If the 42nd piece (filling the board) completes a 4-in-a-row, status is `"won"` with `winner = current_player` and valid `winning_coords`. It is **never** classified as a draw.
 - **Draw Definition**: `is_draw(board) == True` if and only if:
   1. No winning 4-in-a-row exists for either player (`check_win(board, 1) == False` and `check_win(board, 2) == False`), AND
   2. The board is full (`is_board_full(board) == True`).
-- **Fixtures in Tests**:
-  - Real, valid full-board draw fixture (no 4-in-a-row anywhere on board).
-  - Full-board win fixture (42nd piece creates horizontal or vertical win).
+- **Concrete Verified Draw Fixture**:
+  Empirically verified in Python test runner with 42 discs (21 ones, 21 twos, all columns full, 0 wins in all 4 directions):
+  ```python
+  DRAW_BOARD_FIXTURE = [
+      [1, 2, 1, 2, 1, 2, 2],
+      [1, 2, 1, 2, 1, 2, 1],
+      [2, 1, 2, 1, 2, 1, 2],
+      [2, 1, 2, 1, 2, 1, 1],
+      [1, 2, 1, 2, 1, 2, 2],
+      [1, 2, 1, 2, 1, 2, 1],
+  ]
+  ```
+  - `check_win(DRAW_BOARD_FIXTURE, 1) == False`
+  - `check_win(DRAW_BOARD_FIXTURE, 2) == False`
+  - `is_board_full(DRAW_BOARD_FIXTURE) == True`
+  - `is_draw(DRAW_BOARD_FIXTURE) == True`
 
 ### 5. GameState Mutation & Turn-Transition Invariants
-- `GameState` encapsulates the authoritative state: `game_id`, `board`, `current_player`, `status`, `winner`, `winning_coords`, `move_count`, `move_history`.
-- Invariants enforced by `apply_move(col: int)`:
+- `GameState` encapsulates authoritative state: `game_id`, `board`, `current_player`, `status`, `winner`, `winning_coords`, `move_count`, `move_history`.
+- Invariants enforced by `apply_move(col: Any)`:
   1. **Terminal-State Lock**: If `status != "active"`, raise `GameTerminalException(code="GAME_TERMINAL", message="Cannot make a move in a terminal game state.")`. State is completely unmodified.
   2. **Atomic Move Application**: Validates legality $\to$ finds open row $\to$ places piece $\to$ checks win $\to$ checks draw.
   3. **Turn Progression**: If move does not end game, `current_player = 2 if current_player == 1 else 1`. If game ends, `current_player` remains the winning player (or last mover) and does not toggle.
@@ -114,9 +131,13 @@ Load these files for context:
          - `is_draw(board) -> bool` (strict win precedence: checks not check_win for either player before returning True)
     2. In `backend/app/core/validation.py`:
        - Define `GameRuleException`, `InvalidMoveException`, `ColumnFullException`, `GameTerminalException`, `InvalidBoardException`.
-       - Implement `validate_column_type_and_range(col: Any) -> int`
-       - Implement `validate_move_legality(board, col: int, status: str) -> None`
-       - Implement `validate_board_structure(board: Any) -> None`
+       - Implement `validate_column_type_and_range(col: Any) -> int`:
+         - Explicitly check `if isinstance(col, bool) or not isinstance(col, int): raise InvalidMoveException(...)`
+         - Check `if col < 0 or col >= COLS: raise InvalidMoveException(...)`
+       - Implement `validate_move_legality(board, col: int, status: str) -> None`:
+         - Checks game status not terminal, checks column not full.
+       - Implement `validate_board_structure(board: Any) -> None`:
+         - Checks 6x7 integer matrix with values in {0, 1, 2}.
     3. In `backend/game_engine.py`:
        - Refactor root module to delegate to `app.core.game_engine`:
          ```python
@@ -181,13 +202,18 @@ Load these files for context:
        - `test_positive_diagonal_win`: verify win from bottom-left to top-right ($\nearrow$); verify exact 4 coordinates.
        - `test_negative_diagonal_win`: verify win from top-left to bottom-right ($\searrow$); verify exact 4 coordinates.
        - `test_deterministic_winning_coords_5_in_a_row`: construct 5-in-a-row and verify engine deterministically returns documented 4-coordinate sequence.
-       - `test_valid_full_board_draw_fixture`: test a known full-board draw fixture with 42 discs; verify `is_board_full == True`, `is_draw == True`, `check_win == False`.
+       - `test_valid_full_board_draw_fixture`: test the verified 42-disc fixture (`DRAW_BOARD_FIXTURE`); verify `is_board_full == True`, `is_draw == True`, `check_win == False` for both players.
        - `test_full_board_win_takes_precedence_over_draw`: 42nd piece creates a win; verify `check_win == True`, `is_draw == False`, status is `"won"`.
-       - `test_legacy_minimax_regression_execution`: call `ai_agent.minimax(board, depth=2, alpha=-math.inf, beta=math.inf, maximizing_player=True)` through the compatibility bridge; verify it returns a valid legal column `0 <= col < 7` and integer/float evaluation score.
+       - `test_legacy_minimax_regression_execution`:
+         - Call matching existing signature: `col, score = minimax(board, depth=2, alpha=-math.inf, beta=math.inf, maximizing_player=True)`
+         - Assert returned `col in get_valid_locations(board)` for the specific test board.
+         - Assert `score` is a finite float or int.
+         - Assert `get_next_open_row(board, col)` is a valid row index $0 \le r < 6$.
     2. Create `backend/tests/test_game_state.py`:
        - `test_state_initialization`: player 1 first, 7 legal moves, status active.
        - `test_state_turn_transition`: player 1 $\to$ player 2 $\to$ player 1.
-       - `test_state_invalid_move_type_and_range`: non-integer col, negative col, col >= 7 raise `InvalidMoveException`.
+       - `test_state_boolean_column_rejected`: passing `True` or `False` raises `InvalidMoveException` with clear message.
+       - `test_state_invalid_move_type_and_range`: string col, negative col, col >= 7 raise `InvalidMoveException`.
        - `test_state_full_column_rejected`: 7th move in full column raises `ColumnFullException` without mutating state or changing player turn.
        - `test_state_terminal_lock`: attempting move after win or draw raises `GameTerminalException`; board and player turn remain frozen.
        - `test_state_move_history`: verify move records contain move_number, player, col, row, and timestamp.
@@ -197,7 +223,7 @@ Load these files for context:
     python -m pytest backend/tests/test_game_engine.py backend/tests/test_game_state.py backend/tests/test_foundation.py -v
   </verify>
   <done>
-    All engine, state, validation, and legacy regression tests pass with 100% success rate.
+    All engine, state, validation, foundation (7/7), and legacy minimax regression tests pass with 100% success rate.
   </done>
 </task>
 
@@ -207,13 +233,14 @@ Load these files for context:
 After all tasks complete, verify:
 - [ ] Connect Four rules have a single source of truth in `backend/app/core/game_engine.py`.
 - [ ] `backend/game_engine.py` delegates to `app.core.game_engine` exporting all legacy symbols (`ROWS, COLS, EMPTY, PLAYER, AI, create_board, is_valid_location, get_next_open_row, drop_piece, check_win, get_valid_locations`).
-- [ ] Existing `minimax` function in `backend/ai_agent.py` executes successfully through the bridge in regression testing.
+- [ ] Existing `minimax` function in `backend/ai_agent.py` executes successfully through the bridge, returns a legal column for the test board, and matches the existing function signature.
 - [ ] Deterministic 4-coordinate sequence is returned when 4 or more connected pieces exist.
-- [ ] Win strictly takes precedence over draw; verified with full-board draw and full-board win fixtures.
-- [ ] Input validation rejects out-of-range, non-integer, and full columns without leaking low-level exceptions.
+- [ ] Win strictly takes precedence over draw; verified with concrete full-board draw fixture (`DRAW_BOARD_FIXTURE`) and full-board win fixture.
+- [ ] Booleans (`True`, `False`), non-integers, out-of-range, and full columns are rejected without leaking low-level exceptions.
 - [ ] Domain exceptions format into standardized error envelope `{"error": {"code": "...", "message": "..."}}`.
 - [ ] Moves after game win or draw are strictly locked and rejected.
 - [ ] `POST /api/ai-move` continues to pass regression tests without modification.
+- [ ] All 7 Phase 1 foundation tests continue to pass.
 - [ ] Full pytest suite passes with 0 failures.
 
 ## Success Criteria
