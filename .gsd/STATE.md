@@ -2,14 +2,18 @@
 
 ## Current Status
 - **Current Milestone**: v1.0 — Initial Release
-- **Current Phase**: Phase 1 — Foundation & API Contract
+- **Completed Phase**: Phase 1 — Foundation & API Contract (✅ Complete, 7/7 tests passed)
+- **Current Phase**: Phase 2 — Core Game Engine & State Validation (⬜ Not Started)
 - **Specification Status**: `FINALIZED`
 - **Planning Lock**: `RELEASED`
-- **Active Task**: Phase 1 Implementation Plan authoring and review (execution paused until plan approved)
+- **Next Step**: Author and review Phase 2 Execution Plan (`.gsd/phases/2/PLAN.md`)
 
 ## Last Session Summary
-- PRD v1.0 review completed and all 4 review clarifications incorporated.
-- Clarified `nodes_evaluated` definition as search-tree nodes, strictly distinct from MCTS iteration and simulation counts.
-- `SPEC.md` marked as `FINALIZED`.
-- Planning lock released.
-- Created detailed Phase 1 execution plan (`.gsd/phases/1/01-foundation-plan.md`) for user review prior to execution.
+- Phase 1 successfully executed and verified against all user safeguards.
+- Established modular `backend/app/` structure with `schemas` and `api` routers.
+- Formalized Pydantic schemas for `ErrorResponse`, `TelemetryMetrics` (with `null` support), and `AgentMetadata`.
+- Configured FastAPI exception handlers formatting errors to `{"error": {"code": "...", "message": "..."}}` without tracebacks.
+- Implemented canonical `GET /api/health` and compatibility alias `GET /health`.
+- Implemented `GET /api/agents` returning metadata for all 6 PRD-specified agents.
+- Fully preserved existing `POST /api/ai-move` endpoint and existing game engine.
+- Authored and ran `backend/tests/test_foundation.py` with 7/7 tests passing in 0.49s.

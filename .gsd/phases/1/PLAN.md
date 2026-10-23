@@ -121,13 +121,13 @@ Load these files for context:
 
 ## Must-Haves
 After all tasks complete, verify:
-- [ ] `GET /api/health` and `GET /health` both respond with `{"status": "ok"}`.
-- [ ] `GET /api/agents` returns the catalog of 6 AI agents.
-- [ ] Error responses strictly conform to `{"error": {"code": "...", "message": "..."}}`.
-- [ ] Existing `POST /api/ai-move` endpoint remains backward-compatible and functional.
-- [ ] All automated tests in `backend/tests/test_foundation.py` pass.
+- [x] `GET /api/health` and `GET /health` both respond with `{"status": "ok"}`.
+- [x] `GET /api/agents` returns the catalog of 6 AI agents.
+- [x] Error responses strictly conform to `{"error": {"code": "...", "message": "..."}}`.
+- [x] Existing `POST /api/ai-move` endpoint remains backward-compatible and functional.
+- [x] All automated tests in `backend/tests/test_foundation.py` pass.
 
 ## Success Criteria
-- [ ] All 3 tasks verified passing.
-- [ ] Must-haves confirmed.
-- [ ] No regressions in existing code.
+- [x] All 3 tasks verified passing.
+- [x] Must-haves confirmed.
+- [x] No regressions in existing code.

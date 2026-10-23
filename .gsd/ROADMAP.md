@@ -6,8 +6,8 @@ updated: 2026-10-23
 
 # Roadmap — Adversarial Game-Playing Agent (Connect Four AI)
 
-> **Current Phase**: Phase 1 — Foundation & API Contract  
-> **Status**: In Planning (Awaiting Phase 1 Plan Review)  
+> **Current Phase**: Phase 2 — Core Game Engine & State Validation  
+> **Status**: Ready for Phase 2 Planning  
 > **Reference**: PRD Section 18 (Development Roadmap)
 
 ---
@@ -25,7 +25,7 @@ updated: 2026-10-23
 ## Phases
 
 ### Phase 1: Foundation & API Contract
-**Status**: 🔄 In Planning  
+**Status**: ✅ Complete  
 **Objective**: Establish target package structure (`backend/app/`, `frontend/src/`), establish Pydantic schemas, configure CORS, implement `/api/health` and `/api/agents` contract, and ensure clean development environments.  
 **Requirements**: REQ-FR-02, REQ-FR-12, REQ-NFR-03, CON-01  
 **Deliverable**: Running frontend/backend with synchronized integration contract and health checks.

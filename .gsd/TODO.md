@@ -2,14 +2,14 @@
 
 ## Current Milestone: v1.0
 
-### Planning & Review
+### Planning & Governance
 - [x] User review of `SPEC.md` and transition status to `FINALIZED`
 - [x] Planning Lock released for implementation planning
-- [ ] Review and approve Phase 1 Implementation Plan
-- [ ] Execute Phase 1: Foundation & API Contract
+- [x] Phase 1 Plan reviewed, approved, and executed
+- [ ] Author and review Phase 2 Execution Plan (`.gsd/phases/2/PLAN.md`)
 
 ### Roadmap Phases
-- [ ] Phase 1: Foundation & API Contract
+- [x] Phase 1: Foundation & API Contract
 - [ ] Phase 2: Core Game Engine & State Validation
 - [ ] Phase 3: Interactive Frontend Interface
 - [ ] Phase 4: Baseline AI Agents (Random & Greedy)
