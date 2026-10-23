@@ -10,7 +10,18 @@ export function MetricsPanel({ telemetry, gameMode }) {
     );
   }
 
-  const { decisionTimeMs, searchDepth, nodesEvaluated, prunedNodes, algorithmName } = telemetry;
+  const {
+    decisionTimeMs,
+    searchDepth,
+    nodesEvaluated,
+    prunedNodes,
+    transpositionHits,
+    mctsIterations,
+    mctsSimulations,
+    algorithmName,
+  } = telemetry;
+
+  const isMCTS = mctsIterations !== null || mctsSimulations !== null;
 
   return (
     <div className="metrics-panel">
@@ -25,32 +36,62 @@ export function MetricsPanel({ telemetry, gameMode }) {
           <span className="metric-value">
             {decisionTimeMs !== null ? `${decisionTimeMs} ms` : '—'}
           </span>
-          <span className="metric-hint">Client round-trip</span>
+          <span className="metric-hint">Computation time</span>
         </div>
 
-        <div className="metric-card">
-          <span className="metric-label">Search Horizon</span>
-          <span className="metric-value">
-            {searchDepth !== null ? `Depth ${searchDepth}` : '—'}
-          </span>
-          <span className="metric-hint">Lookahead plies</span>
-        </div>
+        {isMCTS ? (
+          <>
+            <div className="metric-card">
+              <span className="metric-label">MCTS Iterations</span>
+              <span className="metric-value">
+                {mctsIterations !== null ? mctsIterations.toLocaleString() : 'N/A'}
+              </span>
+              <span className="metric-hint">UCT search cycles</span>
+            </div>
 
-        <div className="metric-card metric-deferred">
-          <span className="metric-label">Nodes Evaluated</span>
-          <span className="metric-value">
-            {nodesEvaluated !== null ? nodesEvaluated.toLocaleString() : 'N/A'}
-          </span>
-          <span className="metric-hint">Phase 4/5 agent metric</span>
-        </div>
+            <div className="metric-card">
+              <span className="metric-label">Rollout Playouts</span>
+              <span className="metric-value">
+                {mctsSimulations !== null ? mctsSimulations.toLocaleString() : 'N/A'}
+              </span>
+              <span className="metric-hint">Completed simulations</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="metric-card">
+              <span className="metric-label">Search Horizon</span>
+              <span className="metric-value">
+                {searchDepth !== null ? `Depth ${searchDepth}` : 'N/A'}
+              </span>
+              <span className="metric-hint">Lookahead plies</span>
+            </div>
 
-        <div className="metric-card metric-deferred">
-          <span className="metric-label">Pruned Branches</span>
-          <span className="metric-value">
-            {prunedNodes !== null ? prunedNodes.toLocaleString() : 'N/A'}
-          </span>
-          <span className="metric-hint">Phase 4/5 agent metric</span>
-        </div>
+            <div className="metric-card">
+              <span className="metric-label">Nodes Evaluated</span>
+              <span className="metric-value">
+                {nodesEvaluated !== null ? nodesEvaluated.toLocaleString() : 'N/A'}
+              </span>
+              <span className="metric-hint">Search-tree nodes</span>
+            </div>
+
+            <div className="metric-card">
+              <span className="metric-label">Pruned Branches</span>
+              <span className="metric-value">
+                {prunedNodes !== null ? prunedNodes.toLocaleString() : 'N/A'}
+              </span>
+              <span className="metric-hint">Alpha-beta cutoffs</span>
+            </div>
+
+            <div className="metric-card">
+              <span className="metric-label">Transposition Hits</span>
+              <span className="metric-value">
+                {transpositionHits !== null ? transpositionHits.toLocaleString() : 'N/A'}
+              </span>
+              <span className="metric-hint">Cache table hits</span>
+            </div>
+          </>
+        )}
       </div>
 
       <p className="metrics-footnote">

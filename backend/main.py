@@ -92,8 +92,9 @@ app.include_router(agent_router)
 class MoveRequest(BaseModel):
     board: list[list[int]]
     depth: Optional[int] = 4  # 2: Easy, 4: Medium, 6: Hard
-    agent: Optional[str] = "minimax"
+    agent: Optional[str] = None
     seed: Optional[int] = None
+    iterations: Optional[int] = None
 
     @field_validator("seed", mode="before")
     @classmethod
@@ -103,20 +104,30 @@ class MoveRequest(BaseModel):
                 raise ValueError("Seed must be an integer, not boolean.")
         return v
 
-# Endpoint for AI move calculation supporting Minimax, Random, and Greedy agents
+    @field_validator("depth", mode="before")
+    @classmethod
+    def validate_depth(cls, v):
+        if v is not None:
+            if isinstance(v, bool) or not isinstance(v, int) or v < 1 or v > 8:
+                raise ValueError("Depth must be an integer between 1 and 8.")
+        return v
+
+    @field_validator("iterations", mode="before")
+    @classmethod
+    def validate_iterations(cls, v):
+        if v is not None:
+            if isinstance(v, bool) or not isinstance(v, int) or v < 10 or v > 10000:
+                raise ValueError("Iterations must be an integer between 10 and 10000.")
+        return v
+
+
+# Endpoint for AI move calculation supporting all Connect Four AI algorithms
 @app.post("/api/ai-move")
 def ai_move(request: MoveRequest):
     validate_board_structure(request.board)
-    agent_id = request.agent or "minimax"
 
-    if agent_id not in ("minimax", "random", "greedy"):
-        raise GameRuleException(
-            code="INVALID_AGENT",
-            message=f"Unknown agent '{agent_id}'. Supported: 'random', 'greedy', 'minimax'.",
-            status_code=400,
-        )
-
-    if agent_id == "minimax":
+    # Legacy contract: when agent parameter is omitted, invoke legacy minimax returning {column, row}
+    if request.agent is None:
         col, _ = minimax(request.board, request.depth or 4, -math.inf, math.inf, True)
         row = get_next_open_row(request.board, col) if col is not None else -1
         return {
@@ -124,7 +135,13 @@ def ai_move(request: MoveRequest):
             "row": row,
         }
 
-    agent = get_agent(agent_id, seed=request.seed)
+    agent_id = request.agent.lower()
+    agent = get_agent(
+        agent_id,
+        depth=request.depth or 4,
+        seed=request.seed,
+        iterations=request.iterations or 1000,
+    )
     col, telemetry = agent.select_move(request.board)
     row = get_next_open_row(request.board, col) if col is not None else -1
     return {

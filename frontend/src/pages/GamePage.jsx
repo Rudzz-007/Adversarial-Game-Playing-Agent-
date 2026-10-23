@@ -19,6 +19,7 @@ export function GamePage() {
     telemetry,
     gameMode,
     depth,
+    iterations,
     startingPlayer,
     selectedAlgorithm,
     handleColumnClick,
@@ -78,6 +79,8 @@ export function GamePage() {
             onGameModeChange={(mode) => resetGame({ gameMode: mode })}
             depth={depth}
             onDepthChange={(d) => resetGame({ depth: d })}
+            iterations={iterations}
+            onIterationsChange={(it) => resetGame({ iterations: it })}
             startingPlayer={startingPlayer}
             onStartingPlayerChange={(p) => resetGame({ startingPlayer: p })}
             selectedAlgorithm={selectedAlgorithm}

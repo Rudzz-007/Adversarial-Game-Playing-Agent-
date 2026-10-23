@@ -6,6 +6,8 @@ export function GameControls({
   onGameModeChange,
   depth,
   onDepthChange,
+  iterations,
+  onIterationsChange,
   startingPlayer,
   onStartingPlayerChange,
   selectedAlgorithm,
@@ -70,8 +72,15 @@ export function GameControls({
               disabled={disabled}
             >
               {displayAgents.map((agent) => {
-                const isActive = ['minimax', 'random', 'greedy'].includes(agent.id);
-                const label = isActive ? `${agent.name} (Active)` : `${agent.name} (Phase 5)`;
+                const isActive = [
+                  'minimax',
+                  'random',
+                  'greedy',
+                  'alphabeta',
+                  'optimized',
+                  'mcts',
+                ].includes(agent.id);
+                const label = isActive ? `${agent.name} (Active)` : `${agent.name} (Phase 6)`;
                 return (
                   <option key={agent.id} value={agent.id} disabled={!isActive}>
                     {label}
@@ -82,20 +91,43 @@ export function GameControls({
           </div>
 
           <div className="control-group">
-            <label htmlFor="depth-select" className="control-label">
+            <label htmlFor="difficulty-select" className="control-label">
               AI Difficulty
             </label>
-            <select
-              id="depth-select"
-              className="control-select"
-              value={depth}
-              onChange={(e) => onDepthChange(Number(e.target.value))}
-              disabled={disabled}
-            >
-              <option value={2}>Easy (Search Depth 2)</option>
-              <option value={4}>Medium (Search Depth 4)</option>
-              <option value={6}>Hard (Search Depth 6)</option>
-            </select>
+            {selectedAlgorithm === 'mcts' ? (
+              <select
+                id="difficulty-select"
+                className="control-select"
+                value={iterations || 1000}
+                onChange={(e) => onIterationsChange?.(Number(e.target.value))}
+                disabled={disabled}
+              >
+                <option value={200}>Easy (200 Iterations)</option>
+                <option value={1000}>Medium (1,000 Iterations)</option>
+                <option value={3000}>Hard (3,000 Iterations)</option>
+              </select>
+            ) : selectedAlgorithm === 'random' || selectedAlgorithm === 'greedy' ? (
+              <select
+                id="difficulty-select"
+                className="control-select"
+                value={1}
+                disabled
+              >
+                <option value={1}>Standard (Baseline)</option>
+              </select>
+            ) : (
+              <select
+                id="difficulty-select"
+                className="control-select"
+                value={depth}
+                onChange={(e) => onDepthChange(Number(e.target.value))}
+                disabled={disabled}
+              >
+                <option value={2}>Easy (Search Depth 2)</option>
+                <option value={4}>Medium (Search Depth 4)</option>
+                <option value={6}>Hard (Search Depth 6)</option>
+              </select>
+            )}
           </div>
 
           <div className="control-group">

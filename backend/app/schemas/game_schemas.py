@@ -19,11 +19,11 @@ class GameCreateRequest(BaseModel):
 
 class MoveRequest(BaseModel):
     column: Optional[int] = Field(None, description="Selected column index (0-6)")
-    # Backward compatibility with existing prototype:
     board: Optional[List[List[int]]] = Field(None, description="Existing prototype board state")
     depth: Optional[int] = Field(4, description="Search depth for legacy endpoint")
-    agent: Optional[str] = Field("minimax", description="Selected AI algorithm ID ('minimax', 'random', 'greedy')")
+    agent: Optional[str] = Field(None, description="Selected AI algorithm ID")
     seed: Optional[int] = Field(None, description="Optional seed for random agent")
+    iterations: Optional[int] = Field(None, description="Optional iteration budget for MCTS")
 
     @field_validator("seed", mode="before")
     @classmethod
@@ -31,6 +31,22 @@ class MoveRequest(BaseModel):
         if v is not None:
             if isinstance(v, bool) or not isinstance(v, int):
                 raise ValueError("Seed must be an integer, not boolean.")
+        return v
+
+    @field_validator("depth", mode="before")
+    @classmethod
+    def validate_depth(cls, v):
+        if v is not None:
+            if isinstance(v, bool) or not isinstance(v, int) or v < 1 or v > 8:
+                raise ValueError("Depth must be an integer between 1 and 8.")
+        return v
+
+    @field_validator("iterations", mode="before")
+    @classmethod
+    def validate_iterations(cls, v):
+        if v is not None:
+            if isinstance(v, bool) or not isinstance(v, int) or v < 10 or v > 10000:
+                raise ValueError("Iterations must be an integer between 10 and 10000.")
         return v
 
 class GameStateResponse(BaseModel):

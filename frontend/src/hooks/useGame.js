@@ -30,6 +30,7 @@ export function useGame() {
   // Game configuration
   const [gameMode, setGameMode] = useState('human_vs_ai'); // 'human_vs_ai' | 'human_vs_human'
   const [depth, setDepth] = useState(4); // 2: Easy, 4: Medium, 6: Hard
+  const [iterations, setIterations] = useState(1000); // 200: Easy, 1000: Medium, 3000: Hard
   const [startingPlayer, setStartingPlayer] = useState(PLAYER_1);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState('minimax');
 
@@ -37,8 +38,11 @@ export function useGame() {
   const [telemetry, setTelemetry] = useState({
     decisionTimeMs: null,
     searchDepth: null,
-    nodesEvaluated: null, // N/A for Phase 3 endpoint
-    prunedNodes: null, // N/A for Phase 3 endpoint
+    nodesEvaluated: null,
+    prunedNodes: null,
+    transpositionHits: null,
+    mctsIterations: null,
+    mctsSimulations: null,
     algorithmName: 'Minimax (Active)',
   });
 
@@ -59,7 +63,7 @@ export function useGame() {
       setErrorCode(null);
 
       try {
-        const response = await fetchAIMove(currentBoard, depth, selectedAlgorithm);
+        const response = await fetchAIMove(currentBoard, depth, selectedAlgorithm, null, iterations);
 
         // Strict AI response validation against legal physical gravity
         const validation = validateAIResponse(currentBoard, response);
@@ -81,16 +85,22 @@ export function useGame() {
           minimax: 'Minimax (Active)',
           random: 'Random Agent (Active)',
           greedy: 'Greedy Agent (Active)',
+          alphabeta: 'Alpha-Beta Pruning (Active)',
+          optimized: 'Optimized Alpha-Beta (Active)',
+          mcts: 'Monte Carlo Tree Search (Active)',
         };
         const algorithmName = algoLabels[selectedAlgorithm] || `${selectedAlgorithm} (Active)`;
         const decisionTimeMs = serverTelemetry?.decision_time_ms ?? latencyMs;
-        const searchDepth = serverTelemetry?.search_depth ?? (selectedAlgorithm === 'minimax' ? depth : null);
+        const searchDepth = serverTelemetry?.search_depth ?? null;
 
         setTelemetry({
           decisionTimeMs,
           searchDepth,
           nodesEvaluated: serverTelemetry?.nodes_evaluated ?? null,
           prunedNodes: serverTelemetry?.pruned_nodes ?? null,
+          transpositionHits: serverTelemetry?.transposition_hits ?? null,
+          mctsIterations: serverTelemetry?.mcts_iterations ?? null,
+          mctsSimulations: serverTelemetry?.mcts_simulations ?? null,
           algorithmName,
         });
 
@@ -143,7 +153,7 @@ export function useGame() {
         inFlightRef.current = false;
       }
     },
-    [depth, moveHistory, selectedAlgorithm]
+    [depth, iterations, moveHistory, selectedAlgorithm]
   );
 
   /**
@@ -246,6 +256,7 @@ export function useGame() {
     (customSettings = {}) => {
       const newMode = customSettings.gameMode ?? gameMode;
       const newDepth = customSettings.depth ?? depth;
+      const newIterations = customSettings.iterations ?? iterations;
       const newStarter = customSettings.startingPlayer ?? startingPlayer;
       const newAlgorithm = customSettings.algorithm ?? selectedAlgorithm;
 
@@ -263,14 +274,28 @@ export function useGame() {
       setTurn(newStarter);
       setGameMode(newMode);
       setDepth(newDepth);
+      setIterations(newIterations);
       setStartingPlayer(newStarter);
       setSelectedAlgorithm(newAlgorithm);
+
+      const algoLabels = {
+        minimax: 'Minimax (Active)',
+        random: 'Random Agent (Active)',
+        greedy: 'Greedy Agent (Active)',
+        alphabeta: 'Alpha-Beta Pruning (Active)',
+        optimized: 'Optimized Alpha-Beta (Active)',
+        mcts: 'Monte Carlo Tree Search (Active)',
+      };
+
       setTelemetry({
         decisionTimeMs: null,
         searchDepth: null,
         nodesEvaluated: null,
         prunedNodes: null,
-        algorithmName: `${newAlgorithm === 'minimax' ? 'Minimax (Active)' : `${newAlgorithm} (Phase 4/5)`}`,
+        transpositionHits: null,
+        mctsIterations: null,
+        mctsSimulations: null,
+        algorithmName: algoLabels[newAlgorithm] || `${newAlgorithm} (Active)`,
       });
 
       // If AI is configured to move first in Human vs AI, trigger immediately on empty board
@@ -280,7 +305,7 @@ export function useGame() {
         }, 50);
       }
     },
-    [gameMode, depth, startingPlayer, selectedAlgorithm, triggerAIMove]
+    [gameMode, depth, iterations, startingPlayer, selectedAlgorithm, triggerAIMove]
   );
 
   return {
@@ -296,6 +321,7 @@ export function useGame() {
     telemetry,
     gameMode,
     depth,
+    iterations,
     startingPlayer,
     selectedAlgorithm,
     ROWS,
@@ -306,6 +332,7 @@ export function useGame() {
     resetGame,
     setGameMode,
     setDepth,
+    setIterations,
     setStartingPlayer,
     setSelectedAlgorithm,
   };

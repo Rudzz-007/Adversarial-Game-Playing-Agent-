@@ -60,7 +60,7 @@ updated: 2026-10-23
 ---
 
 ### Phase 5: Adversarial Search (Minimax, Alpha-Beta, Optimized, MCTS)
-**Status**: ⬜ Not Started  
+**Status**: ✅ Complete  
 **Objective**: Implement `MinimaxAgent`, `AlphaBetaAgent` with pruning metrics, `OptimizedAgent` (center-outward move ordering, transposition table caching, immediate cutoff), and `MCTSAgent` (selection, expansion, rollout, backpropagation with UCT).  
 **Requirements**: REQ-FR-04, REQ-FR-05, REQ-FR-09, REQ-NFR-01  
 **Depends on**: Phase 4  

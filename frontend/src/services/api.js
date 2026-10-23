@@ -66,17 +66,21 @@ export async function fetchAgents() {
  *
  * @param {number[][]} board - Current 6x7 board grid.
  * @param {number} depth - Search depth (2, 4, 6).
- * @param {string} agent - Algorithm ID ('minimax', 'random', 'greedy').
+ * @param {string} agent - Algorithm ID ('minimax', 'random', 'greedy', 'alphabeta', 'optimized', 'mcts').
  * @param {number|null} seed - Optional integer seed for reproducible random agent.
+ * @param {number|null} iterations - Optional integer iteration budget for MCTS.
  * @returns {Promise<{ column: number, row: number, telemetry?: object, latencyMs: number }>}
  */
-export async function fetchAIMove(board, depth = 4, agent = 'minimax', seed = null) {
+export async function fetchAIMove(board, depth = 4, agent = 'minimax', seed = null, iterations = null) {
   const startTime = performance.now();
 
   try {
     const payload = { board, depth, agent };
     if (seed !== null && seed !== undefined) {
       payload.seed = seed;
+    }
+    if (iterations !== null && iterations !== undefined) {
+      payload.iterations = iterations;
     }
 
     const response = await fetch(`${API_BASE}/api/ai-move`, {

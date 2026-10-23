@@ -415,7 +415,7 @@ def test_factory_instantiates_supported_agents():
 def test_factory_rejects_unsupported_agent():
     """Verify get_agent raises GameRuleException with INVALID_AGENT code."""
     with pytest.raises(GameRuleException) as exc_info:
-        get_agent("alphabeta")  # Not in Phase 4 scope
+        get_agent("unsupported_agent")
     assert exc_info.value.code == "INVALID_AGENT"
     assert exc_info.value.status_code == 400
 
