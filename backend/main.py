@@ -15,6 +15,7 @@ from ai_agent import minimax
 from game_engine import get_next_open_row
 from app.api.health_routes import router as health_router
 from app.api.agent_routes import router as agent_router
+from app.core.validation import GameRuleException
 
 app = FastAPI(
     title="Connect Four AI Agent",
@@ -23,6 +24,13 @@ app = FastAPI(
 )
 
 # Standardized Error Handlers conforming to PRD §12.9: {"error": {"code": "...", "message": "..."}}
+@app.exception_handler(GameRuleException)
+async def game_rule_exception_handler(request: Request, exc: GameRuleException):
+    """Format domain game rule violations into standardized error envelope."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": {"code": exc.code, "message": exc.message}},
+    )
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Format schema validation errors into standardized error envelope without stack traces."""

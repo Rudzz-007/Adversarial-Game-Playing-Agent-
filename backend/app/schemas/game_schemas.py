@@ -22,3 +22,22 @@ class MoveRequest(BaseModel):
     # Backward compatibility with existing prototype:
     board: Optional[List[List[int]]] = Field(None, description="Existing prototype board state")
     depth: Optional[int] = Field(4, description="Search depth for legacy endpoint")
+
+class GameStateResponse(BaseModel):
+    game_id: str = Field(..., description="Unique game session identifier")
+    board: List[List[int]] = Field(..., description="6x7 board grid")
+    current_player: int = Field(..., description="Active player (1 or 2)")
+    status: str = Field(..., description="Game status: 'active', 'won', 'draw'")
+    winner: Optional[int] = Field(None, description="Winner player ID if won, else None")
+    legal_moves: List[int] = Field(default_factory=list, description="Available legal columns")
+    winning_coords: Optional[List[List[int]]] = Field(None, description="Winning 4-cell coordinates")
+    move_count: int = Field(0, description="Total moves executed")
+    last_move: Optional[Dict[str, Any]] = Field(None, description="Last executed move details")
+
+class MoveResponse(BaseModel):
+    board: List[List[int]] = Field(..., description="Updated 6x7 board")
+    current_player: int = Field(..., description="Player who moves next")
+    status: str = Field(..., description="Game status after move")
+    winner: Optional[int] = Field(None, description="Winner player ID if won")
+    last_move: Dict[str, Any] = Field(..., description="Details of the applied move")
+    winning_coords: Optional[List[List[int]]] = Field(None, description="Winning 4-cell coordinates if won")

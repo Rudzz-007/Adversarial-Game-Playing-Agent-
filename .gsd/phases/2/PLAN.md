@@ -246,20 +246,20 @@ Load these files for context:
 
 ## Must-Haves
 After all tasks complete, verify:
-- [ ] Connect Four rules have a single source of truth in `backend/app/core/game_engine.py`.
-- [ ] `backend/game_engine.py` delegates to `app.core.game_engine` exporting all legacy symbols (`ROWS, COLS, EMPTY, PLAYER, AI, create_board, is_valid_location, get_next_open_row, drop_piece, check_win, get_valid_locations`).
-- [ ] Existing `minimax` function in `backend/ai_agent.py` executes successfully through the bridge, returns a legal column for the test board, and matches the existing function signature.
-- [ ] Deterministic 4-coordinate sequence is returned when 4 or more connected pieces exist.
-- [ ] Win strictly takes precedence over draw; verified with full-board win fixture.
-- [ ] Verified legal 42-move sequence (`DRAW_MOVES_SEQUENCE`) replays without premature win, reaches full board, and yields `is_draw == True`.
-- [ ] Booleans (`True`, `False`), non-integers, out-of-range, and full columns are rejected without leaking low-level exceptions.
-- [ ] Domain exceptions format into standardized error envelope `{"error": {"code": "...", "message": "..."}}`.
-- [ ] Moves after game win or draw are strictly locked and rejected.
-- [ ] `POST /api/ai-move` continues to pass regression tests without modification.
-- [ ] All 7 Phase 1 foundation tests continue to pass.
-- [ ] Full pytest suite passes with 0 failures.
+- [x] Connect Four rules have a single source of truth in `backend/app/core/game_engine.py`.
+- [x] `backend/game_engine.py` delegates to `app.core.game_engine` exporting all legacy symbols (`ROWS, COLS, EMPTY, PLAYER, AI, create_board, is_valid_location, get_next_open_row, drop_piece, check_win, get_valid_locations`).
+- [x] Existing `minimax` function in `backend/ai_agent.py` executes successfully through the bridge, returns a legal column for the test board, and matches the existing function signature.
+- [x] Deterministic 4-coordinate sequence is returned when 4 or more connected pieces exist.
+- [x] Win strictly takes precedence over draw; verified with full-board win fixture.
+- [x] Verified legal 42-move sequence (`DRAW_MOVES_SEQUENCE`) replays without premature win, reaches full board, and yields `is_draw == True`.
+- [x] Booleans (`True`, `False`), non-integers, out-of-range, and full columns are rejected without leaking low-level exceptions.
+- [x] Domain exceptions format into standardized error envelope `{"error": {"code": "...", "message": "..."}}`.
+- [x] Moves after game win or draw are strictly locked and rejected.
+- [x] `POST /api/ai-move` continues to pass regression tests without modification.
+- [x] All 7 Phase 1 foundation tests continue to pass.
+- [x] Full pytest suite passes with 0 failures.
 
 ## Success Criteria
-- [ ] All 3 tasks verified passing.
-- [ ] Must-haves confirmed.
-- [ ] No regressions in foundation tests or existing AI agent.
+- [x] All 3 tasks verified passing.
+- [x] Must-haves confirmed.
+- [x] No regressions in foundation tests or existing AI agent.

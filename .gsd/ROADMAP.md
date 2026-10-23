@@ -6,14 +6,14 @@ updated: 2026-10-23
 
 # Roadmap — Adversarial Game-Playing Agent (Connect Four AI)
 
-> **Current Phase**: Phase 2 — Core Game Engine & State Validation  
-> **Status**: Ready for Phase 2 Planning  
+> **Current Phase**: Phase 3 — Interactive Frontend Interface  
+> **Status**: Ready for Phase 3 Planning  
 > **Reference**: PRD Section 18 (Development Roadmap)
 
 ---
 
 ## Must-Haves (from PRD & SPEC)
-- [ ] Reliable 6×7 Connect Four Game Engine with 100% win/draw detection and unit tests.
+- [x] Reliable 6×7 Connect Four Game Engine with 100% win/draw detection and unit tests.
 - [ ] Shared modular `BaseAgent` interface and all 6 AI agent implementations (Random, Greedy, Minimax, Alpha-Beta, Optimized Alpha-Beta, MCTS/UCT).
 - [ ] FastAPI REST API with game management, move submission, AI calculation, and benchmarking endpoints.
 - [ ] Polished React (Vite) interface with interactive board, animations, telemetry panels, and game controls.
@@ -33,7 +33,7 @@ updated: 2026-10-23
 ---
 
 ### Phase 2: Core Game Engine & State Validation
-**Status**: 🔄 In Planning  
+**Status**: ✅ Complete  
 **Objective**: Build and modularize the 6×7 grid engine (`core/game_engine.py`, `core/game_state.py`, `core/validation.py`) with piece dropping, legal column discovery, horizontal/vertical/diagonal win checking, draw detection, and automated `pytest` test suite.  
 **Requirements**: REQ-FR-02, REQ-FR-06, REQ-FR-07, REQ-NFR-02, REQ-NFR-05  
 **Depends on**: Phase 1  
